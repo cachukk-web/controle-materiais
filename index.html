@@ -306,38 +306,36 @@ function removerLinha(botao){
 
 async function enviar(){
 
-    if(registros.length===0){
+    console.log("REGISTROS:");
+    console.log(registros);
+
+    if(registros.length === 0){
         alert("Nenhum item na tabela");
         return;
     }
 
     try{
 
-        for(const item of registros){
+        const resposta = await fetch(URL_FLOW,{
+            method:"POST",
+            headers:{
+                "Content-Type":"application/json"
+            },
+            body: JSON.stringify(registros[0])
+        });
 
-            await fetch(URL_FLOW,{
-                method:"POST",
-                headers:{
-                    "Content-Type":"application/json"
-                },
-                body:JSON.stringify(item)
-            });
+        const texto = await resposta.text();
 
-        }
+        console.log("STATUS:", resposta.status);
+        console.log("RESPOSTA:", texto);
 
-        alert("Materiais enviados com sucesso!");
+        alert("Verifique o Console F12");
 
-        limpar();
-
-    }
-
-    catch(erro){
+    }catch(erro){
 
         console.error(erro);
-        alert("Erro ao enviar");
 
     }
-
 }
 
 function limpar(){
