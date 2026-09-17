@@ -305,16 +305,16 @@ function removerLinha(botao){
 
 async function enviar(){
 
-    console.log("REGISTROS:");
-    console.log(registros);
- 
     if(registros.length === 0){
         alert("Nenhum item na tabela");
         return;
     }
 
     try{
-        
+
+        console.log("ENVIANDO:");
+        console.log(registros[0]);
+
         const resposta = await fetch(URL_FLOW,{
             method:"POST",
             headers:{
@@ -323,18 +323,20 @@ async function enviar(){
             body: JSON.stringify(registros[0])
         });
 
-        const texto = await resposta.text();
+        const retorno = await resposta.text();
 
         console.log("STATUS:", resposta.status);
-        console.log("RESPOSTA:", texto);
+        console.log("RETORNO:", retorno);
 
-        alert("Verifique o Console F12");
+        alert("Status: " + resposta.status);
 
     }catch(erro){
 
-        console.error(erro);
+        console.error("ERRO:", erro);
+        alert("Erro ao enviar");
 
     }
+
 }
 
 function limpar(){
