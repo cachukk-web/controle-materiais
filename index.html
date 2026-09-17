@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Controle de Materiais</title>
+
+<style>
+body{
+    font-family:Segoe UI,Arial,sans-serif;
+    background:#f3f2f1;
+    padding:20px;
+}
+
+.container{
+    max-width:1200px;
+    margin:auto;
+    background:white;
+    padding:20px;
+    border-radius:10px;
+    box-shadow:0 2px 5px rgba(0,0,0,.2);
+}
+
+h1{
+    color:#0078d4;
+}
+
+.row{
+    display:flex;
+    gap:10px;
+    margin-bottom:10px;
+    flex-wrap:wrap;
+}
+
+input,select{
+    padding:8px;
+    min-width:200px;
+}
+
+button{
+    background:#0078d4;
+    color:white;
+    border:none;
+    padding:10px 20px;
+    cursor:pointer;
+    border-radius:5px;
+}
+
+button:hover{
+    background:#106ebe;
+}
+
+table{
+    width:100%;
+    border-collapse:collapse;
+    margin-top:20px;
+}
+
+th,td{
+    border:1px solid #ddd;
+    padding:8px;
+}
+
+th{
+    background:#0078d4;
+    color:white;
+}
+
+.oculto{
+    display:none;
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+
+<h1>CONTROLE DE RETIRADA DE MATERIAIS</h1>
+
+<div class="row">
+
+<select id="supervisor">
+<option>ALCIONE CACHUK</option>
+<option>JOSE</option>
+<option>MARCOS</option>
+<option>RICARDO</option>
+</select>
+
+<input type="text" id="datahora" readonly>
+
+<select id="categoria" onchange="alterarTipo()">
+<option value="CPE">CPE</option>
+<option value="MISC">MISCELÂNEA</option>
+</select>
+
+</div>
+
+<div id="cpe">
+
+<div class="row">
+
+<select id="tipoCPE">
+<option>HGU</option>
+<option>ONU</option>
+<option>ONT</option>
+<option>MESH</option>
+<option>STB</option>
+</select>
+
+<input type="text"
+       id="serial"
+       placeholder="Bipe o serial"
+       autocomplete="off">
+
+<button onclick="adicionarCPE()">Adicionar</button>
+
+</div>
+
+</div>
+
+<div id="misc" class="oculto">
+
+<div class="row">
+
+<select id="material">
+
+<option>CONECTOR FIG 8</option>
+<option>CONECTOR SC/APC</option>
+<option>PATCH CORD</option>
+<option>CABO DROP</option>
+<option>ABRAÇADEIRA</option>
+
+</select>
+
+<input type="number"
+       id="quantidade"
+       placeholder="Quantidade">
+
+<button onclick="adicionarMisc()">Adicionar</button>
+
+</div>
+
+</div>
+
+<table id="tabela">
+
+<thead>
+
+<tr>
+<th>Supervisor</th>
+<th>Serial</th>
+<th>Data</th>
+<th>Quantidade</th>
+<th>Tipo</th>
+<th>Ação</th>
+</tr>
+
+</thead>
+
+<tbody></tbody>
+
+</table>
+
+<br>
+
+<button onclick="enviar()">Enviar para Estoque</button>
+
+<button onclick="limpar()">Limpar Tabela</button>
+
+</div>
+
+<script>
+
+const URL_FLOW = "URL_DO_SEU_FLOW";
+
+let registros=[];
+
+function atualizarDataHora(){
+
+    const agora = new Date();
+
+    const formatado =
+        agora.toLocaleDateString('pt-BR') +
+        ' ' +
+        agora.toLocaleTimeString('pt-BR');
+
+    document.getElementById('datahora').value=formatado;
+}
+
+setInterval(atualizarDataHora,1000);
+atualizarDataHora();
+
+function alterarTipo(){
+
+    const tipo=document.getElementById("categoria").value;
+
+    document.getElementById("cpe").classList.add("oculto");
+    document.getElementById("misc").classList.add("oculto");
+
+    if(tipo==="CPE"){
+        document.getElementById("cpe").classList.remove("oculto");
+    }else{
+        document.getElementById("misc").classList.remove("oculto");
+    }
+
+}
+
+function adicionarLinha(item){
+
+    registros.push(item);
+
+    const tbody=document.querySelector("#tabela tbody");
+
+    const linha=tbody.insertRow();
+
+    linha.insertCell().innerText=item.supervisor;
+    linha.insertCell().innerText=item.serial;
+    linha.insertCell().innerText=item.data;
+    linha.insertCell().innerText=item.quantidade;
+    linha.insertCell().innerText=item.tipo;
+
+    const btn=linha.insertCell();
+
+    btn.innerHTML=
+    "<button onclick='removerLinha(this)'>Excluir</button>";
+
+}
+
+function adicionarCPE(){
+
+    const item={
+
+        supervisor:
+        document.getElementById("supervisor").value,
+
+        serial:
+        document.getElementById("serial").value.trim(),
+
+        data:
+        document.getElementById("datahora").value,
+
+        quantidade:"1",
+
+        tipo:
+        document.getElementById("tipoCPE").value
+
+    };
+
+    if(!item.serial){
+        alert("Informe o serial");
+        return;
+    }
+
+    adicionarLinha(item);
+
+    document.getElementById("serial").value="";
+    document.getElementById("serial").focus();
+
+}
+
+function adicionarMisc(){
+
+    const material=
+    document.getElementById("material").value;
+
+    const qtd=
+    document.getElementById("quantidade").value;
+
+    if(!qtd){
+        alert("Informe a quantidade");
+        return;
+    }
+
+    const item={
+
+        supervisor:
+        document.getElementById("supervisor").value,
+
+        serial:material,
+
+        data:
+        document.getElementById("datahora").value,
+
+        quantidade:qtd,
+
+        tipo:material
+
+    };
+
+    adicionarLinha(item);
+
+    document.getElementById("quantidade").value="";
+
+}
+
+function removerLinha(botao){
+
+    const linha=botao.parentNode.parentNode;
+    const indice=linha.rowIndex-1;
+
+    registros.splice(indice,1);
+
+    linha.remove();
+
+}
+
+async function enviar(){
+
+    if(registros.length===0){
+        alert("Nenhum item na tabela");
+        return;
+    }
+
+    try{
+
+        for(const item of registros){
+
+            await fetch(URL_FLOW,{
+                method:"POST",
+                headers:{
+                    "Content-Type":"application/json"
+                },
+                body:JSON.stringify(item)
+            });
+
+        }
+
+        alert("Materiais enviados com sucesso!");
+
+        limpar();
+
+    }
+
+    catch(erro){
+
+        console.error(erro);
+        alert("Erro ao enviar");
+
+    }
+
+}
+
+function limpar(){
+
+    registros=[];
+
+    document.querySelector("#tabela tbody").innerHTML="";
+
+}
+
+document.getElementById("serial")
+.addEventListener("keypress",function(e){
+
+    if(e.key==="Enter"){
+
+        e.preventDefault();
+
+        adicionarCPE();
+
+    }
+
+});
+
+</script>
+
+</body>
+</html>
