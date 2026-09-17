@@ -307,14 +307,14 @@ async function enviar(){
 
     console.log("REGISTROS:");
     console.log(registros);
-
+     console.log(JSON.stringify(item));
     if(registros.length === 0){
         alert("Nenhum item na tabela");
         return;
     }
 
     try{
-
+        
         const resposta = await fetch(URL_FLOW,{
             method:"POST",
             headers:{
