@@ -278,8 +278,7 @@ function adicionarMisc(){
 
         serial:material,
 
-        data:
-        document.getElementById("datahora").value,
+       data: new Date().toISOString().split("T")[0],
 
         quantidade:qtd,
 
