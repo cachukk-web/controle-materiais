@@ -1,19 +1,22 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-br">
 <head>
+
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Controle de Materiais</title>
+
+<title>Consulta de Materiais</title>
 
 <style>
+
 body{
-    font-family:Segoe UI,Arial,sans-serif;
+    font-family:Segoe UI, Arial;
     background:#f3f2f1;
     padding:20px;
 }
 
 .container{
-    max-width:1200px;
+    max-width:1400px;
     margin:auto;
     background:white;
     padding:20px;
@@ -25,23 +28,15 @@ h1{
     color:#0078d4;
 }
 
-.row{
-    display:flex;
-    gap:10px;
-    margin-bottom:10px;
-    flex-wrap:wrap;
-}
-
-input,select{
-    padding:8px;
-    min-width:200px;
+input,select,button{
+    padding:10px;
+    margin:5px;
 }
 
 button{
     background:#0078d4;
     color:white;
     border:none;
-    padding:10px 20px;
     cursor:pointer;
     border-radius:5px;
 }
@@ -56,311 +51,240 @@ table{
     margin-top:20px;
 }
 
-th,td{
-    border:1px solid #ddd;
-    padding:8px;
-}
-
 th{
     background:#0078d4;
     color:white;
 }
 
-.oculto{
-    display:none;
+td,th{
+    border:1px solid #ddd;
+    padding:8px;
+    text-align:left;
 }
+
+.total{
+    margin-top:20px;
+    font-weight:bold;
+    font-size:18px;
+}
+
 </style>
+
 </head>
+
 <body>
 
 <div class="container">
 
-<h1>CONTROLE DE RETIRADA DE MATERIAIS</h1>
-
-<div class="row">
+<h1>CONSULTA DE RETIRADAS</h1>
 
 <select id="supervisor">
-<option>ALCIONE CACHUK</option>
-<option>JOSE</option>
-<option>MARCOS</option>
-<option>RICARDO</option>
+    <option>ALCIONE CACHUK</option>
+    <option>JOSE</option>
+    <option>MARCOS</option>
+    <option>RICARDO</option>
 </select>
 
-<input type="text" id="datahora" readonly>
+<button onclick="consultar()">
+    Consultar
+</button>
 
-<select id="categoria" onchange="alterarTipo()">
-<option value="CPE">CPE</option>
-<option value="MISC">MISCELÂNEA</option>
-</select>
+<button onclick="exportarCSV()">
+    Exportar Excel
+</button>
 
+<div class="total" id="totalItens">
+    Total de itens: 0
 </div>
 
-<div id="cpe">
-
-<div class="row">
-
-<select id="tipoCPE">
-<option>HGU</option>
-<option>ONU</option>
-<option>ONT</option>
-<option>MESH</option>
-<option>STB</option>
-</select>
-
-<input type="text"
-       id="serial"
-       placeholder="Bipe o serial"
-       autocomplete="off">
-
-<button onclick="adicionarCPE()">Adicionar</button>
-
-</div>
-
-</div>
-
-<div id="misc" class="oculto">
-
-<div class="row">
-
-<select id="material">
-
-<option>CONECTOR FIG 8</option>
-<option>CONECTOR SC/APC</option>
-<option>PATCH CORD</option>
-<option>CABO DROP</option>
-<option>ABRAÇADEIRA</option>
-
-</select>
-
-<input type="number"
-       id="quantidade"
-       placeholder="Quantidade">
-
-<button onclick="adicionarMisc()">Adicionar</button>
-
-</div>
-
-</div>
-
-<table id="tabela">
+<table>
 
 <thead>
-
 <tr>
-<th>Supervisor</th>
-<th>Serial</th>
-<th>Data</th>
-<th>Quantidade</th>
-<th>Tipo</th>
-<th>Ação</th>
+    <th>Retirada</th>
+    <th>Supervisor</th>
+    <th>Serial</th>
+    <th>Data</th>
+    <th>Quantidade</th>
+    <th>Tipo</th>
 </tr>
-
 </thead>
 
-<tbody></tbody>
+<tbody id="resultado">
+</tbody>
 
 </table>
 
-<br>
+<h2>Resumo por Material</h2>
 
-<button onclick="enviar()">Enviar para Estoque</button>
+<table>
 
-<button onclick="limpar()">Limpar Tabela</button>
+<thead>
+<tr>
+    <th>Material</th>
+    <th>Quantidade</th>
+</tr>
+</thead>
+
+<tbody id="resumo">
+</tbody>
+
+</table>
 
 </div>
 
 <script>
 
-const URL_FLOW = "https://default9744600e3e04492ebaa125ec245c6f.10.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/a54eabefd9af40c1a7ca1c2eaa7ae874/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=qSL_xYD9vcjOzVfiFqPKEG_fV7WjzoYTUOEXDeny89k";
+const URL_FLOW =
+"https://default9744600e3e04492ebaa125ec245c6f.10.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/d15068f198214a769c5dbf9806208002/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=nWb1Rr_Uig8NSMngTReCC3EVRHTY2QJZN6F35k6_X3A";
 
-let registros=[];
 
-function atualizarDataHora(){
 
-    const agora = new Date();
 
-    const formatado =
-        agora.toLocaleDateString('pt-BR') +
-        ' ' +
-        agora.toLocaleTimeString('pt-BR');
+let dadosRetornados = [];
 
-    document.getElementById('datahora').value=formatado;
-}
+async function consultar(){
 
-setInterval(atualizarDataHora,1000);
-atualizarDataHora();
+    try{
 
-function alterarTipo(){
+        const supervisor =
+        document.getElementById("supervisor").value;
 
-    const tipo=document.getElementById("categoria").value;
+        const dados = {
+            supervisor: supervisor
+        };
 
-    document.getElementById("cpe").classList.add("oculto");
-    document.getElementById("misc").classList.add("oculto");
+        const resposta = await fetch(URL_FLOW,{
+            method:"POST",
+            headers:{
+                "Content-Type":"application/json"
+            },
+            body:JSON.stringify(dados)
+        });
 
-    if(tipo==="CPE"){
-        document.getElementById("cpe").classList.remove("oculto");
-    }else{
-        document.getElementById("misc").classList.remove("oculto");
+        const retorno = await resposta.json();
+
+        dadosRetornados = retorno;
+
+        montarTabela(retorno);
+
     }
-
-}
-
-function adicionarLinha(item){
-
-    registros.push(item);
-
-    const tbody=document.querySelector("#tabela tbody");
-
-    const linha=tbody.insertRow();
-
-    linha.insertCell().innerText=item.supervisor;
-    linha.insertCell().innerText=item.serial;
-    linha.insertCell().innerText=item.data;
-    linha.insertCell().innerText=item.quantidade;
-    linha.insertCell().innerText=item.tipo;
-
-    const btn=linha.insertCell();
-
-    btn.innerHTML=
-    "<button onclick='removerLinha(this)'>Excluir</button>";
-
-}
-
-
-function adicionarCPE(){
-        const protocolo =
-         "RET-" +
-         new Date().toISOString().slice(0,10).replaceAll("-","") +
-         "-" +
-         Date.now();
-
-    const item={
-        title: protocolo,
-        supervisor:
-        document.getElementById("supervisor").value,
-
-        serial:
-        document.getElementById("serial").value.trim(),
-
-        data: new Date().toISOString().split("T")[0],
-
-        quantidade:"1",
-
-        tipo:
-        document.getElementById("tipoCPE").value
-
-    };
-
-    if(!item.serial){
-        alert("Informe o serial");
-        return;
-    }
-
-    adicionarLinha(item);
-
-    document.getElementById("serial").value="";
-    document.getElementById("serial").focus();
-
-}
-
-function adicionarMisc(){
-           const protocolo =
-         "RET-" +
-         new Date().toISOString().slice(0,10).replaceAll("-","") +
-         "-" +
-         Date.now();
-    const material=
-    document.getElementById("material").value;
-
-    const qtd=
-    document.getElementById("quantidade").value;
-
-    if(!qtd){
-        alert("Informe a quantidade");
-        return;
-    }
-
-    const item={
-        title: protocolo,
-        supervisor:
-        document.getElementById("supervisor").value,
-
-        serial:material,
-
-       data: new Date().toISOString().split("T")[0],
-
-        quantidade:qtd,
-
-        tipo:material
-
-    };
-
-    adicionarLinha(item);
-
-    document.getElementById("quantidade").value="";
-
-}
-
-function removerLinha(botao){
-
-    const linha=botao.parentNode.parentNode;
-    const indice=linha.rowIndex-1;
-
-    registros.splice(indice,1);
-
-    linha.remove();
-
-}
-
-async function enviar() {
-
-    try {
-
-        for (const item of registros) {
-
-            const resposta = await fetch(URL_FLOW, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify(item)
-            });
-
-            const retorno = await resposta.json();
-
-            console.log(retorno);
-
-        }
-
-        alert("Materiais lançados com Sucesso");
-
-    } catch (erro) {
+    catch(erro){
 
         console.error(erro);
-        alert("Erro ao enviar");
 
-    }
-}
-function limpar(){
-
-    registros=[];
-
-    document.querySelector("#tabela tbody").innerHTML="";
-
-}
-
-document.getElementById("serial")
-.addEventListener("keypress",function(e){
-
-    if(e.key==="Enter"){
-
-        e.preventDefault();
-
-        adicionarCPE();
+        alert(
+            "Erro ao consultar dados. Verifique o fluxo."
+        );
 
     }
 
-});
+}
+
+function montarTabela(dados){
+
+    const tbody =
+    document.getElementById("resultado");
+
+    const resumoBody =
+    document.getElementById("resumo");
+
+    tbody.innerHTML = "";
+    resumoBody.innerHTML = "";
+
+    let total = 0;
+
+    let resumoMateriais = {};
+
+    dados.forEach(item => {
+
+        total++;
+
+        tbody.innerHTML += `
+        <tr>
+            <td>${item.Title || ''}</td>
+            <td>${item.SUPERVISOR || ''}</td>
+            <td>${item.SERIAL || ''}</td>
+            <td>${item.DATA || ''}</td>
+            <td>${item.QUANTIDADE || ''}</td>
+            <td>${item.TIPO || ''}</td>
+        </tr>
+        `;
+
+        let qtd =
+        parseInt(item.QUANTIDADE || 0);
+
+        let material =
+        item.TIPO || "SEM DESCRIÇÃO";
+
+        resumoMateriais[material] =
+        (resumoMateriais[material] || 0) + qtd;
+
+    });
+
+    document.getElementById("totalItens").innerText =
+    "Total de itens: " + total;
+
+    for(const material in resumoMateriais){
+
+        resumoBody.innerHTML += `
+        <tr>
+            <td>${material}</td>
+            <td>${resumoMateriais[material]}</td>
+        </tr>
+        `;
+
+    }
+
+}
+
+function exportarCSV(){
+
+    if(dadosRetornados.length === 0){
+
+        alert("Nenhum dado para exportar.");
+
+        return;
+    }
+
+    let csv =
+    "Retirada;Supervisor;Serial;Data;Quantidade;Tipo\n";
+
+    dadosRetornados.forEach(item => {
+
+        csv +=
+        `${item.Title || ''};` +
+        `${item.SUPERVISOR || ''};` +
+        `${item.SERIAL || ''};` +
+        `${item.DATA || ''};` +
+        `${item.QUANTIDADE || ''};` +
+        `${item.TIPO || ''}\n`;
+
+    });
+
+    const blob = new Blob(
+        ["\ufeff" + csv],
+        {
+            type:"text/csv;charset=utf-8;"
+        }
+    );
+
+    const link =
+    document.createElement("a");
+
+    link.href =
+    URL.createObjectURL(blob);
+
+    link.download =
+    "Consulta_Materiais.csv";
+
+    document.body.appendChild(link);
+
+    link.click();
+
+    document.body.removeChild(link);
+
+}
 
 </script>
 
