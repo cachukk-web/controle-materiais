@@ -303,42 +303,35 @@ function removerLinha(botao){
 
 }
 
-async function enviar(){
+async function enviar() {
 
-    if(registros.length === 0){
-        alert("Nenhum item na tabela");
-        return;
-    }
+    try {
 
-    try{
+        for (const item of registros) {
 
-        console.log("ENVIANDO:");
-        console.log(registros[0]);
+            const resposta = await fetch(URL_FLOW, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(item)
+            });
 
-        const resposta = await fetch(URL_FLOW,{
-            method:"POST",
-            headers:{
-                "Content-Type":"application/json"
-            },
-            body: JSON.stringify(registros[0])
-        });
+            const retorno = await resposta.json();
 
-        const retorno = await resposta.text();
+            console.log(retorno);
 
-        console.log("STATUS:", resposta.status);
-        console.log("RETORNO:", retorno);
+        }
 
-        alert("Status: " + resposta.status);
+        alert("Materiais enviados com sucesso!");
 
-    }catch(erro){
+    } catch (erro) {
 
-        console.error("ERRO:", erro);
+        console.error(erro);
         alert("Erro ao enviar");
 
     }
-
 }
-
 function limpar(){
 
     registros=[];
