@@ -226,10 +226,16 @@ function adicionarLinha(item){
 
 }
 
+
 function adicionarCPE(){
+        const protocolo =
+         "RET-" +
+         new Date().toISOString().slice(0,10).replaceAll("-","") +
+         "-" +
+         Date.now();
 
     const item={
-
+        title: protocolo,
         supervisor:
         document.getElementById("supervisor").value,
 
@@ -258,7 +264,11 @@ function adicionarCPE(){
 }
 
 function adicionarMisc(){
-
+           const protocolo =
+         "RET-" +
+         new Date().toISOString().slice(0,10).replaceAll("-","") +
+         "-" +
+         Date.now();
     const material=
     document.getElementById("material").value;
 
@@ -271,7 +281,7 @@ function adicionarMisc(){
     }
 
     const item={
-
+        title: protocolo,
         supervisor:
         document.getElementById("supervisor").value,
 
