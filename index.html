@@ -236,8 +236,7 @@ function adicionarCPE(){
         serial:
         document.getElementById("serial").value.trim(),
 
-        data:
-        document.getElementById("datahora").value,
+        data: new Date().toISOString().split("T")[0],
 
         quantidade:"1",
 
