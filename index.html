@@ -70,6 +70,32 @@ td,th{
     display:none;
 }
 
+
+.loading-container{
+    display:none;
+    margin-top:20px;
+}
+
+.loading-bar{
+    width:100%;
+    height:25px;
+    background:#ddd;
+    border-radius:20px;
+    overflow:hidden;
+}
+
+.loading-progress{
+    width:0%;
+    height:100%;
+    background:#0078d4;
+    transition:width .3s;
+}
+
+.loading-text{
+    margin-top:10px;
+    font-weight:bold;
+    color:#0078d4;
+}
 </style>
 
 </head>
@@ -188,11 +214,19 @@ Adicionar Item
 
 </table>
 
-<button onclick="enviarLote()">
+<button id="btnEnviar" onclick="enviarLote()">
 Finalizar Retirada
 </button>
 
-<div id="mensagem"></div>
+<div id="loadingBox" class="loading-container">
+
+    <div class="loading-bar">
+        <div id="loadingProgress" class="loading-progress"></div>
+    </div>
+
+    <div class="loading-text">
+        Finalizando retirada...
+    </div>
 
 </div>
 
@@ -211,6 +245,22 @@ Date.now();
 
 document.getElementById("lblProtocolo").innerHTML =
 "PROTOCOLO: " + protocolo;
+document.addEventListener("DOMContentLoaded", () => {
+
+    document.getElementById("serial")
+    .addEventListener("keypress", function(event){
+
+        if(event.key === "Enter"){
+
+            event.preventDefault();
+
+            adicionarItem();
+
+        }
+
+    });
+
+});
 
 function alterarCategoria(){
 
@@ -228,6 +278,13 @@ function alterarCategoria(){
         document.getElementById("blocoCPE")
         .classList.remove("hidden");
 
+        setTimeout(() => {
+
+            document.getElementById("serial")
+            .focus();
+
+        },100);
+
     }
 
     if(categoria === "MISCELANEA"){
@@ -235,10 +292,16 @@ function alterarCategoria(){
         document.getElementById("blocoMIS")
         .classList.remove("hidden");
 
+        setTimeout(() => {
+
+            document.getElementById("quantidade")
+            .focus();
+
+        },100);
+
     }
 
 }
-
 function adicionarItem(){
 
     const supervisor =
@@ -278,6 +341,9 @@ function adicionarItem(){
 
         document.getElementById("serial").value="";
 
+       document.getElementById("serial").focus();
+
+
     }
         if(categoria === "MISCELANEA"){
 
@@ -301,8 +367,14 @@ function adicionarItem(){
     }
 
     itens.push(item);
-
+    
     atualizarTabela();
+    
+    if(categoria === "MISCELANEA"){
+    
+        document.getElementById("quantidade").value = "1";
+    
+}
 
 }
 
@@ -353,8 +425,17 @@ async function enviarLote(){
     }
 
     try{
+        document.getElementById("btnEnviar").disabled = true;
 
-        for(const item of itens){
+        document.getElementById("btnEnviar").innerText =
+        "Aguarde...";        
+
+        document.getElementById("loadingBox").style.display =
+        "block";
+
+        for(let i = 0; i < itens.length; i++){
+
+            const item = itens[i];
 
             const dados = {
 
@@ -387,16 +468,21 @@ async function enviarLote(){
 
             console.log("RETORNO:");
             console.log(retorno);
-     
+            let percentual =((i + 1) / itens.length) * 100;
+
+            document.getElementById("loadingProgress").style.width = percentual + "%";
+              await new Promise(resolve =>
+               setTimeout(resolve,100)
+);
            
         }
-           alert("✅ Retirada enviada com sucesso!");
-        document.getElementById("mensagem").innerHTML = "✅ Retirada enviada com sucesso!";
-       
-        itens = [];
-
-        atualizarTabela();
-        location.reload();
+          alert("✅ Retirada enviada com sucesso!");
+          
+          itens = [];
+          
+          atualizarTabela();
+          
+          location.reload();
     }
     catch(erro){
 
